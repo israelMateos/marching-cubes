@@ -5,4 +5,6 @@
 
 extern int edgeTable[256];
 
+void marching_cubes(float ***scalar_field, int nx, int ny, int nz, float isovalue, Triangle *triangles, int *triangle_count);
+
 #endif
