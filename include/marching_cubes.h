@@ -5,6 +5,6 @@
 
 extern int edgeTable[256];
 
-void marching_cubes(float ***scalar_field, int nx, int ny, int nz, float isovalue, Triangle *triangles, int *triangle_count);
+int marching_cubes(Point grid_cell[8], float grid_vals[8], float isovalue, Triangle *triangles, int cube_index);
 
 #endif

@@ -360,109 +360,84 @@ int triTable[256][16] =
 /**
  * Marching cubes algorithm.
  * 
- * scalar_field: A 3D array of scalar values.
- * nx, ny, nz: The dimensions of the scalar field.
+ * grid_cell: The 8 corners of the cube.
+ * grid_vals: The scalar values at each corner.
  * isovalue: The isovalue to extract the surface at.
  * triangles: An array of triangles to store the output.
- * triangle_count: The number of triangles in the output.
+ * 
+ * Returns the number of triangles.
 */
-void marching_cubes(float ***scalar_field, int nx, int ny, int nz, float isovalue, Triangle *triangles, int *triangle_count) {
-    *triangle_count = 0;
+int marching_cubes(Point grid_cell[8], float grid_vals[8], float isovalue, Triangle *triangles, int cube_index) {
+    int triangle_count = 0;
 
-    for (int x = 0; x < nx; x++) {
-        for (int y = 0; y < ny; y++) {
-            for (int z = 0; z < nz; z++) {
-                int cube_index = 0;
-                float grid_vals[8];
-                Point grid_cell[8] = {
-                    {x, y, z},
-                    {x + 1, y, z},
-                    {x + 1, y + 1, z},
-                    {x, y + 1, z},
-                    {x, y, z + 1},
-                    {x + 1, y, z + 1},
-                    {x + 1, y + 1, z + 1},
-                    {x, y + 1, z + 1}
-                };
+    int intersected_edges = edgeTable[cube_index];
+    
+    /* Find the vertices where the surface intersects the cube */
+    Point vertices[12];
 
-                /* Get the scalar values at each corner */
-                for (int i = 0; i < 8; i++) {
-                    grid_vals[i] = scalar_field[(int)grid_cell[i].x][(int)grid_cell[i].y][(int)grid_cell[i].z];
-                    if (grid_vals[i] >= isovalue) {
-                        cube_index |= (1 << i);
-                    }
-                }
-
-
-                int intersected_edges = edgeTable[cube_index];
-                
-                /* Find the vertices where the surface intersects the cube */
-                Point vertices[12];
-
-                if (intersected_edges == 0) {
-                    continue;
-                }
-
-                if (intersected_edges & 1) {
-                    Edge edge = {grid_cell[0], grid_cell[1]};
-                    vertices[0] = interpolate(edge, isovalue, grid_vals[0], grid_vals[1]);
-                }
-                if (intersected_edges & 2) {
-                    Edge edge = {grid_cell[1], grid_cell[2]};
-                    vertices[1] = interpolate(edge, isovalue, grid_vals[1], grid_vals[2]);
-                }
-                if (intersected_edges & 4) {
-                    Edge edge = {grid_cell[2], grid_cell[3]};
-                    vertices[2] = interpolate(edge, isovalue, grid_vals[2], grid_vals[3]);
-                }
-                if (intersected_edges & 8) {
-                    Edge edge = {grid_cell[3], grid_cell[0]};
-                    vertices[3] = interpolate(edge, isovalue, grid_vals[3], grid_vals[0]);
-                }
-                if (intersected_edges & 16) {
-                    Edge edge = {grid_cell[4], grid_cell[5]};
-                    vertices[4] = interpolate(edge, isovalue, grid_vals[4], grid_vals[5]);
-                }
-                if (intersected_edges & 32) {
-                    Edge edge = {grid_cell[5], grid_cell[6]};
-                    vertices[5] = interpolate(edge, isovalue, grid_vals[5], grid_vals[6]);
-                }
-                if (intersected_edges & 64) {
-                    Edge edge = {grid_cell[6], grid_cell[7]};
-                    vertices[6] = interpolate(edge, isovalue, grid_vals[6], grid_vals[7]);
-                }
-                if (intersected_edges & 128) {
-                    Edge edge = {grid_cell[7], grid_cell[4]};
-                    vertices[7] = interpolate(edge, isovalue, grid_vals[7], grid_vals[4]);
-                }
-                if (intersected_edges & 256) {
-                    Edge edge = {grid_cell[0], grid_cell[4]};
-                    vertices[8] = interpolate(edge, isovalue, grid_vals[0], grid_vals[4]);
-                }
-                if (intersected_edges & 512) {
-                    Edge edge = {grid_cell[1], grid_cell[5]};
-                    vertices[9] = interpolate(edge, isovalue, grid_vals[1], grid_vals[5]);
-                }
-                if (intersected_edges & 1024) {
-                    Edge edge = {grid_cell[2], grid_cell[6]};
-                    vertices[10] = interpolate(edge, isovalue, grid_vals[2], grid_vals[6]);
-                }
-                if (intersected_edges & 2048) {
-                    Edge edge = {grid_cell[3], grid_cell[7]};
-                    vertices[11] = interpolate(edge, isovalue, grid_vals[3], grid_vals[7]);
-                }
-
-                /* Create triangles */
-                for (int i = 0; triTable[cube_index][i] != -1; i += 3) {
-                    Triangle triangle = {
-                        vertices[triTable[cube_index][i]],
-                        vertices[triTable[cube_index][i + 1]],
-                        vertices[triTable[cube_index][i + 2]]
-                    };
-                    triangles[*triangle_count] = triangle;
-                    (*triangle_count)++;
-                }
-            }
-        }
+    if (intersected_edges == 0) {
+        return 0;
     }
+
+    if (intersected_edges & 1) {
+        Edge edge = {grid_cell[0], grid_cell[1]};
+        vertices[0] = interpolate(edge, isovalue, grid_vals[0], grid_vals[1]);
+    }
+    if (intersected_edges & 2) {
+        Edge edge = {grid_cell[1], grid_cell[2]};
+        vertices[1] = interpolate(edge, isovalue, grid_vals[1], grid_vals[2]);
+    }
+    if (intersected_edges & 4) {
+        Edge edge = {grid_cell[2], grid_cell[3]};
+        vertices[2] = interpolate(edge, isovalue, grid_vals[2], grid_vals[3]);
+    }
+    if (intersected_edges & 8) {
+        Edge edge = {grid_cell[3], grid_cell[0]};
+        vertices[3] = interpolate(edge, isovalue, grid_vals[3], grid_vals[0]);
+    }
+    if (intersected_edges & 16) {
+        Edge edge = {grid_cell[4], grid_cell[5]};
+        vertices[4] = interpolate(edge, isovalue, grid_vals[4], grid_vals[5]);
+    }
+    if (intersected_edges & 32) {
+        Edge edge = {grid_cell[5], grid_cell[6]};
+        vertices[5] = interpolate(edge, isovalue, grid_vals[5], grid_vals[6]);
+    }
+    if (intersected_edges & 64) {
+        Edge edge = {grid_cell[6], grid_cell[7]};
+        vertices[6] = interpolate(edge, isovalue, grid_vals[6], grid_vals[7]);
+    }
+    if (intersected_edges & 128) {
+        Edge edge = {grid_cell[7], grid_cell[4]};
+        vertices[7] = interpolate(edge, isovalue, grid_vals[7], grid_vals[4]);
+    }
+    if (intersected_edges & 256) {
+        Edge edge = {grid_cell[0], grid_cell[4]};
+        vertices[8] = interpolate(edge, isovalue, grid_vals[0], grid_vals[4]);
+    }
+    if (intersected_edges & 512) {
+        Edge edge = {grid_cell[1], grid_cell[5]};
+        vertices[9] = interpolate(edge, isovalue, grid_vals[1], grid_vals[5]);
+    }
+    if (intersected_edges & 1024) {
+        Edge edge = {grid_cell[2], grid_cell[6]};
+        vertices[10] = interpolate(edge, isovalue, grid_vals[2], grid_vals[6]);
+    }
+    if (intersected_edges & 2048) {
+        Edge edge = {grid_cell[3], grid_cell[7]};
+        vertices[11] = interpolate(edge, isovalue, grid_vals[3], grid_vals[7]);
+    }
+
+    /* Create triangles */
+    for (int i = 0; triTable[cube_index][i] != -1; i += 3) {
+        Triangle triangle = {
+            vertices[triTable[cube_index][i]],
+            vertices[triTable[cube_index][i + 1]],
+            vertices[triTable[cube_index][i + 2]]
+        };
+        triangles[triangle_count] = triangle;
+        triangle_count++;
+    }
+
+    return triangle_count;
 }
