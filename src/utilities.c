@@ -1,5 +1,7 @@
 #include "utilities.h"
 #include <math.h>
+#include <stdio.h>
+#include <string.h>
 
 /*
     * Interpolates between two points based on the isovalue.
@@ -35,4 +37,65 @@ Point interpolate(Edge edge, float isovalue, float start_val, float end_val) {
     };
     
     return result;
+}
+
+/*
+    * Reads a scalar field from a PLY file.
+    *
+    * filename: The name of the file to read.
+    * scalar_field: The scalar field to read into.
+    * 
+    * Returns: 0 if successful, -1 if an error occurred.
+*/
+int read_scalar_field(char *filename, float ***scalar_field) {
+    FILE *file = fopen(filename, "r");
+    if (file == NULL) {
+        fprintf(stderr, "Error: Could not open input file %s\n", filename);
+        return -1;
+    }
+
+    char line[256];
+    int n_vertices = 0;
+    while (fgets(line, sizeof(line), file)) {
+        if (strstr(line, "element vertex") != NULL) {
+            sscanf(line, "element vertex %d", &n_vertices);
+            break;
+        }
+    }
+    while (fgets(line, sizeof(line), file)) {
+        if (strstr(line, "end_header") != NULL) {
+            break;
+        }
+    }
+
+    for (int i = 0; i < n_vertices; i++) {
+        float x, y, z, val;
+        fscanf(file, "%f %f %f %f", &x, &y, &z, &val);
+        scalar_field[(int)x][(int)y][(int)z] = val;
+    }
+    fclose(file);
+    return 0;
+}
+
+int write_triangles(char *filename, Triangle *triangles, int n_triangles) {
+    FILE *file = fopen(filename, "w");
+    if (file == NULL) {
+        fprintf(stderr, "Error: Could not open output file %s\n", filename);
+        return -1;
+    }
+
+    fprintf(file, "# OBJ file\n");
+    fprintf(file, "o mesh\n");
+    for (int i = 0; i < n_triangles; i++) {
+        fprintf(file, "v %f %f %f\n", triangles[i].v1.x, triangles[i].v1.y, triangles[i].v1.z);
+        fprintf(file, "v %f %f %f\n", triangles[i].v2.x, triangles[i].v2.y, triangles[i].v2.z);
+        fprintf(file, "v %f %f %f\n", triangles[i].v3.x, triangles[i].v3.y, triangles[i].v3.z);
+    }
+
+    for (int i = 0; i < n_triangles; i++) {
+        fprintf(file, "f %d %d %d\n", 3*i + 1, 3*i + 2, 3*i + 3);
+    }
+
+    fclose(file);
+    return 0;
 }
