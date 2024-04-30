@@ -4,7 +4,7 @@
 /*
 From: http://paulbourke.net/geometry/polygonise/
 
-int edgeTable[256].  It corresponds to the 2^8 possible combinations of
+int edge_table[256].  It corresponds to the 2^8 possible combinations of
 the eight (n) vertices either existing inside or outside (2^n) of the
 surface.  A vertex is inside of a surface if the value at that vertex is
 less than that of the surface you are scanning for.  The table index is
@@ -37,7 +37,7 @@ and 7->4.  Edge 8 thru 11 are the vertical edges from vert 0->4, 1->5,
    |/       |/    |/       |/
    3--------2     *---2----*
 */
-int edgeTable[256]={
+const int edge_table[256]={
     0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
     0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
     0x190, 0x99 , 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c,
@@ -74,7 +74,7 @@ int edgeTable[256]={
 /*
 From: http://paulbourke.net/geometry/polygonise/
 
-int triTable[256][16] also corresponds to the 256 possible combinations
+int triangle_table[256][16] also corresponds to the 256 possible combinations
 of vertices.
 The [16] dimension of the table is again the list of edges of the cube
 which are intersected by the surface.  This time however, the edges are
@@ -84,7 +84,7 @@ Each triple of edges listed in the table contains the vertices of one
 triangle on the mesh.  The are 16 entries because it has been shown that
 there are at most 5 triangles in a cube and each "edge triple" list is
 terminated with the value -1.
-For example triTable[3] contains
+For example triangle_table[3] contains
 {1, 8, 3, 9, 8, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
 This corresponds to the case of a cube whose vertex 0 and 1 are inside
 of the surface and the rest of the verts are outside (00000001 bitwise
@@ -96,7 +96,7 @@ triangles: one which is made of the intersection vertices found on edges
 Remember, each intersected edge contains only one surface vertex.  The
 vertex triples are listed in counter clockwise order for proper facing.
 */
-int triTable[256][16] =
+const int triangle_table[256][16] =
 {
     {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
     {0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
@@ -370,7 +370,7 @@ int triTable[256][16] =
 int marching_cubes(Point grid_cell[8], float grid_vals[8], float isovalue, Triangle *triangles, int cube_index) {
     int triangle_count = 0;
 
-    int intersected_edges = edgeTable[cube_index];
+    int intersected_edges = edge_table[cube_index];
     
     /* Find the vertices where the surface intersects the cube */
     Point vertices[12];
@@ -429,11 +429,11 @@ int marching_cubes(Point grid_cell[8], float grid_vals[8], float isovalue, Trian
     }
 
     /* Create triangles */
-    for (int i = 0; triTable[cube_index][i] != -1; i += 3) {
+    for (int i = 0; triangle_table[cube_index][i] != -1; i += 3) {
         Triangle triangle = {
-            vertices[triTable[cube_index][i]],
-            vertices[triTable[cube_index][i + 1]],
-            vertices[triTable[cube_index][i + 2]]
+            vertices[triangle_table[cube_index][i]],
+            vertices[triangle_table[cube_index][i + 1]],
+            vertices[triangle_table[cube_index][i + 2]]
         };
         triangles[triangle_count] = triangle;
         triangle_count++;
