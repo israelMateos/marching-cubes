@@ -47,7 +47,7 @@ Point interpolate(Edge edge, float isovalue, float start_val, float end_val) {
     * 
     * Returns: 0 if successful, -1 if an error occurred.
 */
-int read_scalar_field(char *filename, float ***scalar_field) {
+int read_scalar_field_from_ply(char *filename, float ***scalar_field) {
     FILE *file = fopen(filename, "r");
     if (file == NULL) {
         fprintf(stderr, "Error: Could not open input file %s\n", filename);
@@ -74,6 +74,35 @@ int read_scalar_field(char *filename, float ***scalar_field) {
         scalar_field[(int)x][(int)y][(int)z] = val;
     }
     fclose(file);
+    return 0;
+}
+
+/*
+    * Reads a scalar field from a RAW file.
+    *
+    * filename: The name of the file to read.
+    * x_size: The size of the x dimension.
+    * y_size: The size of the y dimension.
+    * z_size: The size of the z dimension.
+    * scalar_field: The scalar field to read into.
+    * 
+    * Returns: 0 if successful, -1 if an error occurred.
+*/
+int read_scalar_field_from_raw(char *filename, int x_size, int y_size, int z_size, float ***scalar_field) {
+    FILE *file = fopen(filename, "rb");
+    if (file == NULL) {
+        fprintf(stderr, "Error: Could not open input file %s\n", filename);
+        return -1;
+    }
+
+    for (int z = 0; z < z_size; z++) {
+        for (int y = 0; y < y_size; y++) {
+            for (int x = 0; x < x_size; x++) {
+                scalar_field[x][y][z] = fgetc(file);
+            }
+        }
+    }
+    
     return 0;
 }
 

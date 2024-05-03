@@ -8,44 +8,64 @@
 int main(int argc, char *argv[]) {
 
     /* Parse command line arguments */
-    if (argc != 5) {
-        fprintf(stderr, "Usage: %s <filename> <isovalue> <max_grid_size> <output_filename>\n", argv[0]);
+    if (argc < 4 || argc > 10) {
+        fprintf(stderr, "Usage: %s [-x <x_size> -y <y_size> -z <z_size] <input_filename> <isovalue> <output_filename>\n", argv[0]);
         return -1;
     }
 
-    float isovalue = atof(argv[2]);
-    int max_grid_size = atoi(argv[3]);
+    /* Read options */
+    int x_size = 400, y_size = 400, z_size = 400;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-x") == 0) {
+            x_size = atoi(argv[i + 1]);
+        } else if (strcmp(argv[i], "-y") == 0) {
+            y_size = atoi(argv[i + 1]);
+        } else if (strcmp(argv[i], "-z") == 0) {
+            z_size = atoi(argv[i + 1]);
+        }
+    }
 
-    FILE *output_file = fopen(argv[4], "w");
+    float isovalue = atof(argv[argc - 2]);
+    FILE *output_file = fopen(argv[argc - 1], "w");
     if (output_file == NULL) {
         fprintf(stderr, "Error: Could not open output file %s\n", argv[3]);
         return -1;
     }
 
     /* Allocate memory for scalar field */
-    float ***scalar_field = malloc(max_grid_size * sizeof(float **));
-    for (int x = 0; x < max_grid_size; x++) {
-        scalar_field[x] = malloc(max_grid_size * sizeof(float *));
-        for (int y = 0; y < max_grid_size; y++) {
-            scalar_field[x][y] = malloc(max_grid_size * sizeof(float));
+    float ***scalar_field = malloc(x_size * sizeof(float **));
+    for (int x = 0; x < x_size; x++) {
+        scalar_field[x] = malloc(y_size * sizeof(float *));
+        for (int y = 0; y < y_size; y++) {
+            scalar_field[x][y] = malloc(z_size * sizeof(float));
         }
     }
 
     /* Read scalar field from file */
-    if (read_scalar_field(argv[1], scalar_field) == -1) {
+    if (strstr(argv[argc - 3], ".ply") != NULL) {
+        if (read_scalar_field_from_ply(argv[argc - 3], scalar_field) == -1) {
+            return -1;
+        }
+    } else if (strstr(argv[argc - 3], ".raw") != NULL) {
+        if (read_scalar_field_from_raw(argv[argc - 3], x_size, y_size, z_size, scalar_field) == -1) {
+            return -1;
+        }
+    } else {
+        fprintf(stderr, "Error: Input file must be a .ply or .raw file\n");
         return -1;
     }
+    printf("Scalar field read\n");
 
     /* Iterate through the cubes */
-    Triangle triangles[4];
+    Triangle triangles[5];
     Triangle *total_triangles = NULL;
     int n_total_triangles = 0;
     int n_triangles = 0;
 
     printf("Running marching cubes...\n");
-    for (int x = 0; x < max_grid_size - 1; x++) {
-        for (int y = 0; y < max_grid_size - 1; y++) {
-            for (int z = 0; z < max_grid_size - 1; z++) {
+    for (int x = 0; x < x_size - 1; x++) {
+        for (int y = 0; y < y_size - 1; y++) {
+            for (int z = 0; z < z_size - 1; z++) {
                 int cube_index = 0;
                 float grid_vals[8];
                 Point grid_cell[8] = {
@@ -78,15 +98,17 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+    printf("Marching cubes completed\n");
 
     /* Write triangles to file */
-    if (write_triangles(argv[4], total_triangles, n_total_triangles) == -1) {
+    if (write_triangles(argv[argc - 1], total_triangles, n_total_triangles) == -1) {
         return -1;
     }
+    printf("Triangles written to file\n");
 
     /* Free memory */
-    for (int x = 0; x < max_grid_size; x++) {
-        for (int y = 0; y < max_grid_size; y++) {
+    for (int x = 0; x < x_size; x++) {
+        for (int y = 0; y < y_size; y++) {
             free(scalar_field[x][y]);
         }
         free(scalar_field[x]);
