@@ -9,26 +9,31 @@ int main(int argc, char *argv[]) {
 
     /* Parse command line arguments */
     if (argc < 4 || argc > 10) {
-        fprintf(stderr, "Usage: %s [-x <x_size> -y <y_size> -z <z_size] <input_filename> <isovalue> <output_filename>\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-x <x_size> -y <y_size> -z <z_size>] <input_filename> <isovalue> <output_filename>\n", argv[0]);
         return -1;
     }
 
     /* Read options */
     int x_size = 400, y_size = 400, z_size = 400;
+    char x_flag = 0, y_flag = 0, z_flag = 0;
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-x") == 0) {
             x_size = atoi(argv[i + 1]);
+            x_flag = 1;
         } else if (strcmp(argv[i], "-y") == 0) {
             y_size = atoi(argv[i + 1]);
+            y_flag = 1;
         } else if (strcmp(argv[i], "-z") == 0) {
             z_size = atoi(argv[i + 1]);
+            z_flag = 1;
         }
     }
+
 
     float isovalue = atof(argv[argc - 2]);
     FILE *output_file = fopen(argv[argc - 1], "w");
     if (output_file == NULL) {
-        fprintf(stderr, "Error: Could not open output file %s\n", argv[3]);
+        fprintf(stderr, "Error: Could not open output file %s\n", argv[argc - 1]);
         return -1;
     }
 
@@ -47,6 +52,10 @@ int main(int argc, char *argv[]) {
             return -1;
         }
     } else if (strstr(argv[argc - 3], ".raw") != NULL) {
+        if (!x_flag || !y_flag || !z_flag) {
+            fprintf(stderr, "Error: Must specify x, y, and z dimensions for .raw file\n");
+            return -1;
+        }
         if (read_scalar_field_from_raw(argv[argc - 3], x_size, y_size, z_size, scalar_field) == -1) {
             return -1;
         }
@@ -82,7 +91,7 @@ int main(int argc, char *argv[]) {
                 /* Get the scalar values at each corner */
                 for (int i = 0; i < 8; i++) {
                     grid_vals[i] = scalar_field[(int)grid_cell[i].x][(int)grid_cell[i].y][(int)grid_cell[i].z];
-                    if (grid_vals[i] >= isovalue) {
+                    if (grid_vals[i] < isovalue) {
                         cube_index |= (1 << i);
                     }
                 }
@@ -92,8 +101,8 @@ int main(int argc, char *argv[]) {
                 
                 /* Update total triangles */
                 total_triangles = realloc(total_triangles,(n_total_triangles + n_triangles)*sizeof(Triangle));
-				for (int i = 0; i < n_triangles; i++)
-					total_triangles[n_total_triangles + i] = triangles[i];
+		        for (int i = 0; i < n_triangles; i++)
+			        total_triangles[n_total_triangles + i] = triangles[i];
                 n_total_triangles += n_triangles;
             }
         }
