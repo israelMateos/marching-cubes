@@ -72,6 +72,7 @@ Here are some examples of how to use the program:
 ## Notes
 
 - This program has been designed as a final project for the Computer Graphics course at the University of Castilla-La Mancha, Spain.
+- The program has been tested with `.raw` files from [klacansky.com/open-scivis-datasets](https://klacansky.com/open-scivis-datasets/).
 - The original Marching Cubes algorithm was developed by Lorensen and Cline in 1987:
 
 ```
