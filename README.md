@@ -21,7 +21,7 @@ To compile the program, you will need a C compiler such as `gcc` and `make` inst
 3. Run `make` to compile the source code. This will produce an executable called `marching_cubes` in the `bin` directory.
 
 ```bash
-git clone https://github.com/israelMateos/marching-cubes/
+git clone https://github.com/israelMateos/marching-cubes.git
 cd marching-cubes
 make
 ```
